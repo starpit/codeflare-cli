@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-export async function initTray(args: { command: string }) {
+export async function initTray(args: { command: string }, _: unknown, createWindow: (argv: string[]) => void) {
   if (args.command === "/tray/init") {
-    import("./tray").then((_) => _.main())
+    import("./tray").then((_) => _.main(createWindow))
   }
 }

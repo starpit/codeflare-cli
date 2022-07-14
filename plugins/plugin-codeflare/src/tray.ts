@@ -14,23 +14,44 @@
  * limitations under the License.
  */
 
+import open from "open"
 import { Profiles } from "madwizard"
+
+import { productName } from "@kui-shell/client/config.d/name.json"
+import { bugs, homepage, version } from "@kui-shell/client/package.json"
 
 let tray: null | InstanceType<typeof import("electron").Tray> = null
 
-async function buildContextMenu(menu: any) {
+async function buildContextMenu(createWindow: (argv: string[]) => void) {
+  const { Menu } = await import("electron")
+
   const jobsDir = Profiles.guidebookProfileDataPath({
     verbose: true,
   })
 
-  const contextMenu = menu.buildFromTemplate([
+  const contextMenu = Menu.buildFromTemplate([
+    { label: `CodeFlare v${version}`, click: () => open(homepage) },
+    { type: "separator" },
     { label: "Profiles", submenu: [{ label: jobsDir.split("/")[jobsDir.split("/").length - 1], type: "radio" }] },
+    { type: "separator" },
+    {
+      label: `Test new window`,
+      click: async () => {
+        try {
+          createWindow(["echo", "hello"])
+        } catch (err) {
+          console.error(err)
+        }
+      },
+    },
+    { label: `Report a Bug`, click: () => open(bugs.url) },
+    { label: `Quit ${productName}`, role: "quit" },
   ])
 
   return contextMenu
 }
 
-export async function main() {
+export async function main(createWindow: (argv: string[]) => void) {
   if (tray) {
     // only register one tray menu...
     return
@@ -42,11 +63,11 @@ export async function main() {
     .whenReady()
     .then(async () => {
       try {
-        const { Menu, Tray } = await import("electron")
+        const { Tray } = await import("electron")
         tray = new Tray(require.resolve("@kui-shell/build/icons/png/codeflareTemplate.png"))
 
-        tray.setToolTip("CodeFlare")
-        tray.setContextMenu(await buildContextMenu(Menu))
+        tray.setToolTip(productName)
+        tray.setContextMenu(await buildContextMenu(createWindow))
       } catch (err) {
         console.error("Error registering electron tray menu", err)
       }
