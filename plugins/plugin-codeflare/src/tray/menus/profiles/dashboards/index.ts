@@ -18,6 +18,7 @@ import { MenuItemConstructorOptions } from "electron"
 import { CreateWindowFunction } from "@kui-shell/core"
 
 import codeflare from "./codeflare"
+import { DashboardSpec } from "./open"
 import UpdateFunction from "../../../update"
 
 /** @return menu items that open dashboards for the given `profile` */
@@ -26,22 +27,23 @@ export default async function dashboards(
   createWindow: CreateWindowFunction,
   updateFn: UpdateFunction
 ): Promise<MenuItemConstructorOptions[]> {
-  const mlflow = { name: "MLFlow", portEnv: "MLFLOW_PORT" }
-  const tensorboard = { name: "Tensorboard", portEnv: "TENSORBOARD_PORT" }
-  const pytorchProfiler = {
-    name: "PyTorch Profiler",
-    nameForGuidebook: "Tensorboard",
-    portEnv: "TENSORBOARD_PORT",
-    path: "#pytorch_profiler",
-  }
+  const dashboards: DashboardSpec[] = [
+    { name: "JupyterLab", portEnv: "JUPYTERLAB_PORT" },
+    { name: "MLFlow", portEnv: "MLFLOW_PORT" },
+    { name: "Tensorboard", portEnv: "TENSORBOARD_PORT" },
+    {
+      name: "PyTorch Profiler",
+      nameForGuidebook: "Tensorboard",
+      portEnv: "TENSORBOARD_PORT",
+      path: "#pytorch_profiler",
+    },
+  ]
 
   return [
     { label: "CodeFlare", submenu: await codeflare(profile, createWindow, updateFn) },
-    { label: "MLFlow", click: () => import("./open").then((_) => _.default(mlflow, profile, createWindow)) },
-    { label: "Tensorboard", click: () => import("./open").then((_) => _.default(tensorboard, profile, createWindow)) },
-    {
-      label: "PyTorch Profiler",
-      click: () => import("./open").then((_) => _.default(pytorchProfiler, profile, createWindow)),
-    },
+    ...dashboards.map((db) => ({
+      label: db.name,
+      click: () => import("./open").then((_) => _.default(db, profile, createWindow)),
+    })),
   ]
 }
